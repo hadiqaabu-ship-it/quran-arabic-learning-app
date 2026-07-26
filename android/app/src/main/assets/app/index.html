@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#075b42">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="离线优先的古兰经阿拉伯语学习应用开源代码">
+  <title>古兰经阿拉伯语学习</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css?v=1.7.1-r2">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand-button" type="button" data-go="today" aria-label="回到今日学习">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path d="M8 11.5c6.8-.8 12.2 1 16 5.3 3.8-4.3 9.2-6.1 16-5.3v25.2c-6.6-.6-11.9 1-16 4.8-4.1-3.8-9.4-5.4-16-4.8V11.5Z"/><path d="M24 17v24.5"/></svg>
+        </span>
+        <span><strong>古兰经阿拉伯语</strong><small id="topbarSubtitle">第 1 / 112 天</small></span>
+      </button>
+      <div class="topbar-actions">
+        <button id="installButton" class="icon-button" type="button" aria-label="安装应用" title="安装应用" hidden>
+          <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3"/></svg>
+        </button>
+        <button class="avatar-button" type="button" data-go="profile" aria-label="打开我的学习">我</button>
+      </div>
+    </header>
+
+    <nav class="main-nav" aria-label="主导航">
+      <button class="nav-item active" type="button" data-view="today">
+        <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-8Z"/></svg><span>今日</span>
+      </button>
+      <button class="nav-item" type="button" data-view="course">
+        <svg viewBox="0 0 24 24"><path d="M4 5.5c3.3-.5 6 .4 8 2.7 2-2.3 4.7-3.2 8-2.7v13c-3.2-.4-5.9.5-8 2.5-2.1-2-4.8-2.9-8-2.5v-13ZM12 8.2V21"/></svg><span>课程</span>
+      </button>
+      <button class="nav-item" type="button" data-view="library">
+        <svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Zm-7 8.5 7 4 7-4M5 15l7 4 7-4"/></svg><span>词库</span>
+      </button>
+      <button class="nav-item" type="button" data-view="pronunciation">
+        <svg viewBox="0 0 24 24"><path d="M12 15a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v5a4 4 0 0 0 4 4Zm7-4a7 7 0 0 1-14 0M12 18v4m-4 0h8"/></svg><span>发音</span>
+      </button>
+      <button class="nav-item" type="button" data-view="profile">
+        <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9a7 7 0 0 1 14 0"/></svg><span>我的</span>
+      </button>
+    </nav>
+
+    <main id="mainView" class="main-view" tabindex="-1" aria-live="polite"></main>
+  </div>
+
+  <section id="sessionLayer" class="session-layer" role="dialog" aria-modal="true" hidden aria-label="学习训练">
+    <header class="session-header">
+      <button id="sessionBack" class="icon-button" type="button" aria-label="退出当前训练">
+        <svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg>
+      </button>
+      <div class="session-heading"><strong id="sessionTitle">学习训练</strong><span id="sessionCount">1 / 5</span></div>
+      <button id="sessionFavorite" class="icon-button" type="button" aria-label="收藏当前词" hidden>
+        <svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg>
+      </button>
+    </header>
+    <div class="session-progress"><span id="sessionProgress"></span></div>
+    <div id="sessionContent" class="session-content"></div>
+  </section>
+
+  <dialog id="confirmDialog" class="dialog">
+    <form method="dialog">
+      <h2 id="dialogTitle">请确认</h2>
+      <p id="dialogMessage"></p>
+      <div class="dialog-actions">
+        <button class="secondary-button" value="cancel">取消</button>
+        <button id="dialogConfirm" class="danger-button" value="confirm">确认</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <input id="importInput" type="file" accept="application/json" hidden>
+  <audio id="modelAudio" preload="auto" crossorigin="anonymous"></audio>
+  <audio id="recordingAudio" preload="metadata"></audio>
+
+  <script src="data/course-data.js?v=1.7.1"></script>
+  <script src="data/alphabet-data.js?v=1.7.1"></script>
+  <script src="data/pronunciation-data.js?v=1.7.1"></script>
+  <script src="app.js?v=1.7.1-r2"></script>
+</body>
+</html>

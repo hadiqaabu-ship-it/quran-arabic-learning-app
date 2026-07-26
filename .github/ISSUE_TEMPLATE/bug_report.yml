@@ -1,0 +1,42 @@
+name: Bug report
+description: 报告可复现的功能问题
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题说明
+      description: 请说明你在哪个页面、点击了什么、实际发生了什么。
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期结果
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开……
+        2. 点击……
+        3. 看到……
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版本和设备
+      placeholder: Android 版本、手机型号或浏览器版本
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: 隐私确认
+      options:
+        - label: 我没有上传密钥、个人录音、学习备份或设备标识。
+          required: true
+

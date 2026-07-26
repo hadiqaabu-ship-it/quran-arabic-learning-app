@@ -1,0 +1,34 @@
+apply plugin: "com.android.application"
+
+android {
+    namespace "com.sahara.quranlearning"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.sahara.quranlearning"
+        minSdk 29
+        targetSdk 35
+        versionCode 23
+        versionName "1.7.1"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+    }
+
+    androidResources {
+        noCompress += ["mp3"]
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

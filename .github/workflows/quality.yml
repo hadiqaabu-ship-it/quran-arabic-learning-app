@@ -1,0 +1,40 @@
+name: Quality
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  source-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check web/app.js
+          node --check web/service-worker.js
+          node --check web/data/course-data.js
+          node --check web/data/alphabet-data.js
+          node --check web/data/pronunciation-data.js
+
+      - name: Reject private release assets
+        shell: bash
+        run: |
+          if find . -type f \( -iname '*.apk' -o -iname '*.aab' -o -iname '*.jks' -o -iname '*.keystore' -o -iname '*.mp3' -o -iname '*.m4a' -o -iname '*.aac' -o -iname '*.wav' -o -iname '*.pdf' \) -print -quit | grep -q .; then
+            echo "Restricted binary or media file found."
+            exit 1
+          fi
+
+      - name: Reject oversized files
+        shell: bash
+        run: |
+          oversized="$(find . -type f -size +95M -print)"
+          if [ -n "$oversized" ]; then
+            printf '%s\n' "$oversized"
+            exit 1
+          fi
+

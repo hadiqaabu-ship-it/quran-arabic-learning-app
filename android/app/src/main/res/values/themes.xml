@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.QuranLearning" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/quran_green</item>
+        <item name="android:navigationBarColor">@color/quran_white</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:colorAccent">@color/quran_green</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>

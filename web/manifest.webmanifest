@@ -1,0 +1,20 @@
+{
+  "name": "古兰经阿拉伯语学习",
+  "short_name": "古兰经阿语",
+  "description": "离线优先的古兰经阿拉伯语学习应用开源代码",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#075b42",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
