@@ -1,0 +1,32 @@
+name: Feature request
+description: 提议可验证的学习体验或维护改进
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: 学习者需求
+      description: 这个建议解决什么实际学习或维护问题？
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 请描述预期交互、数据或维护流程。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 来源与证据
+      description: 如涉及经文、翻译、教材或音频，请提供公开来源和再分发许可。
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: 内容边界
+      options:
+        - label: 我没有上传受限教材、音频、个人录音、密钥或学习备份。
+          required: true

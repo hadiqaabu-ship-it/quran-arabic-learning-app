@@ -1,6 +1,24 @@
 # 古兰经阿拉伯语学习 App
 
+[![Quality](https://github.com/hadiqaabu-ship-it/quran-arabic-learning-app/actions/workflows/quality.yml/badge.svg)](https://github.com/hadiqaabu-ship-it/quran-arabic-learning-app/actions/workflows/quality.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/hadiqaabu-ship-it/quran-arabic-learning-app?include_prereleases)](https://github.com/hadiqaabu-ship-it/quran-arabic-learning-app/releases)
+
 一个面向中文学习者的离线优先阿拉伯语学习应用。项目包含 Web/PWA 学习界面和 Android WebView 容器，支持课程、词库、经文语境、发音练习、本地学习进度与备份。
+
+> 当前状态：早期社区源码版。代码可公开审查和构建；生产课程、教材与音频因版权和再分发边界暂不随仓库提供。
+
+## 为什么做这个项目
+
+中文使用者在学习古兰经阿拉伯语时，常常需要在词汇、完整经文语境、发音练习和复习计划之间切换。本项目希望提供一个可审计、离线优先且不依赖云端账号的学习框架：
+
+- 把词条放回完整经文语境，而不是只展示孤立片段；
+- 采用主动回忆和间隔复习，而不是只做浏览式学习；
+- 学习进度和录音默认只保存在本机；
+- 将程序代码与第三方教材、翻译和音频权利分开治理；
+- 同一套 Web 学习界面可用于 PWA 和离线 Android 容器。
+
+项目影响、维护工作和当前证据边界见 [docs/PROJECT_IMPACT.md](docs/PROJECT_IMPACT.md)。
 
 ## 开源范围
 
@@ -18,7 +36,8 @@
 ```text
 web/      Web/PWA 界面源码
 android/  Android 离线容器源码
-docs/     数据与发布边界说明
+docs/     架构、项目影响和内容边界
+.github/  自动检查、Issue 和协作模板
 ```
 
 ## 本地预览
@@ -36,6 +55,14 @@ docs/     数据与发布边界说明
 
 当前 Android 工程没有提交个人 `local.properties`、密钥或构建产物。
 
+## 维护与路线
+
+- 架构说明：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- 项目路线：[ROADMAP.md](ROADMAP.md)
+- 版本记录：[CHANGELOG.md](CHANGELOG.md)
+- 维护者职责：[MAINTAINERS.md](MAINTAINERS.md)
+- 支持方式：[SUPPORT.md](SUPPORT.md)
+
 ## 许可证
 
 程序代码采用 [GNU GPL-3.0-only](LICENSE)。
@@ -46,3 +73,4 @@ GPL 只覆盖本仓库中明确公开的程序代码，不自动授予任何第�
 
 欢迎提交问题与改进。提交前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [SECURITY.md](SECURITY.md)。
 
+项目欢迎代码、可访问性、离线体验、测试和文档贡献。涉及经文、翻译、教材或音频的数据贡献，必须先提供清晰的来源与再分发许可。
