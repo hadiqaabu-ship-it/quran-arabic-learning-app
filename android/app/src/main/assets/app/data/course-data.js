@@ -1,3 +1,52 @@
-// Production course content is intentionally excluded from the public repository.
-window.QURAN_APP_DATA = null;
-
+// Public no-audio demonstration content. See docs/DEMO_CONTENT_LICENSES.md.
+window.QURAN_APP_DATA = {
+  meta: {
+    version: "0.2.0-demo",
+    title: "《忠诚章》七日无音频学习演示",
+    dayCount: 7,
+    unitCount: 1,
+    wordCount: 8,
+    verseCount: 4,
+    audioFileCount: 0,
+    audioMode: "none",
+    reviewIntervals: [1, 3, 7, 14, 30],
+  },
+  lessons: [
+    {
+      index: 1,
+      title: "《忠诚章》核心词与完整经文",
+      first: 1,
+      last: 4,
+      entries: 8,
+      stage: 1,
+      overview: "先识别八个核心词，再回到四节完整经文中定位和回忆。",
+      sourceRange: "《古兰经》112:1–4",
+      words: [
+        { number: 1, id: "demo-001", unit: 1, stage: 1, arabic: "قُلْ", meaning: "你说", pos: "命令式动词", morphology: "来自 قال", source: "《忠诚章》112:1", note: "在经文中是直接命令语气。", phrase: "قُلْ هُوَ", phraseHint: "你说：他……", audioTracks: [] },
+        { number: 2, id: "demo-002", unit: 1, stage: 1, arabic: "هُوَ", meaning: "他", pos: "人称代词", morphology: "第三人称阳性单数", source: "《忠诚章》112:1", note: "这里指向后文所述的安拉。", phrase: "هُوَ ٱللَّهُ", phraseHint: "他是安拉", audioTracks: [] },
+        { number: 3, id: "demo-003", unit: 1, stage: 1, arabic: "ٱللَّهُ", meaning: "安拉", pos: "专有名词", morphology: "主格形式", source: "《忠诚章》112:1–2", note: "同一词在前两节连续出现。", phrase: "ٱللَّهُ أَحَدٌ", phraseHint: "安拉是独一的", audioTracks: [] },
+        { number: 4, id: "demo-004", unit: 1, stage: 1, arabic: "أَحَدٌ", meaning: "独一的", pos: "名词／描述词", morphology: "不定主格", source: "《忠诚章》112:1、112:4", note: "在本章首尾出现，但句法位置不同。", phrase: "ٱللَّهُ أَحَدٌ", phraseHint: "安拉是独一的", audioTracks: [] },
+        { number: 5, id: "demo-005", unit: 1, stage: 1, arabic: "ٱلصَّمَدُ", meaning: "万物所依者", pos: "名词", morphology: "带定冠词", source: "《忠诚章》112:2", note: "学习释义用于帮助记忆，不替代权威注释。", phrase: "ٱللَّهُ ٱلصَّمَدُ", phraseHint: "安拉是万物所依者", audioTracks: [] },
+        { number: 6, id: "demo-006", unit: 1, stage: 1, arabic: "يَلِدْ", meaning: "生育", pos: "未完成式动词", morphology: "受 لَمْ 支配", source: "《忠诚章》112:3", note: "لَمْ 使动词表达过去未发生。", phrase: "لَمْ يَلِدْ", phraseHint: "他没有生育", audioTracks: [] },
+        { number: 7, id: "demo-007", unit: 1, stage: 1, arabic: "يُولَدْ", meaning: "被生", pos: "被动式动词", morphology: "受 لَمْ 支配", source: "《忠诚章》112:3", note: "与 يَلِدْ 对照记忆主动和被动。", phrase: "وَلَمْ يُولَدْ", phraseHint: "他也不是被生的", audioTracks: [] },
+        { number: 8, id: "demo-008", unit: 1, stage: 1, arabic: "كُفُوًا", meaning: "相等者／匹敌者", pos: "名词", morphology: "宾格形式", source: "《忠诚章》112:4", note: "结合完整经文理解“没有任何匹敌者”。", phrase: "كُفُوًا أَحَدٌ", phraseHint: "任何相等者", audioTracks: [] },
+      ],
+      verses: [
+        { id: "demo-v112-1", unit: 1, reference: "112:1", arabic: "قُلْ هُوَ ٱللَّهُ أَحَدٌ", translation: "学习释义：你说：他是安拉，是独一的。", footnote: "项目自编学习释义，不替代权威译本或经注。", targetEntryId: "demo-001" },
+        { id: "demo-v112-2", unit: 1, reference: "112:2", arabic: "ٱللَّهُ ٱلصَّمَدُ", translation: "学习释义：安拉是万物所依者。", footnote: "项目自编学习释义，不替代权威译本或经注。", targetEntryId: "demo-005" },
+        { id: "demo-v112-3", unit: 1, reference: "112:3", arabic: "لَمْ يَلِدْ وَلَمْ يُولَدْ", translation: "学习释义：他没有生育，也不是被生的。", footnote: "项目自编学习释义，不替代权威译本或经注。", targetEntryId: "demo-006" },
+        { id: "demo-v112-4", unit: 1, reference: "112:4", arabic: "وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ", translation: "学习释义：没有任何事物能与他相等。", footnote: "项目自编学习释义，不替代权威译本或经注。", targetEntryId: "demo-008" },
+      ],
+    },
+  ],
+  schedule: [
+    { day: 1, wordIds: ["demo-001", "demo-002", "demo-003", "demo-004"], unitIds: [1], verseIds: ["demo-v112-1"], pronunciationDay: null, weeklyTest: null, gate: null },
+    { day: 2, wordIds: ["demo-005", "demo-006", "demo-007", "demo-008"], unitIds: [1], verseIds: ["demo-v112-2"], pronunciationDay: null, weeklyTest: null, gate: null },
+    { day: 3, reviewOnly: true, wordIds: ["demo-001", "demo-002", "demo-003", "demo-004"], unitIds: [1], verseIds: ["demo-v112-3"], pronunciationDay: null, weeklyTest: null, gate: null },
+    { day: 4, reviewOnly: true, wordIds: ["demo-005", "demo-006", "demo-007", "demo-008"], unitIds: [1], verseIds: ["demo-v112-4"], pronunciationDay: null, weeklyTest: null, gate: null },
+    { day: 5, reviewOnly: true, wordIds: ["demo-001", "demo-003", "demo-005", "demo-008"], unitIds: [1], verseIds: ["demo-v112-1", "demo-v112-2"], pronunciationDay: null, weeklyTest: null, gate: null },
+    { day: 6, reviewOnly: true, wordIds: ["demo-002", "demo-004", "demo-006", "demo-007"], unitIds: [1], verseIds: ["demo-v112-3", "demo-v112-4"], pronunciationDay: null, weeklyTest: null, gate: null },
+    { day: 7, reviewOnly: true, wordIds: ["demo-001", "demo-002", "demo-003", "demo-004", "demo-005", "demo-006", "demo-007", "demo-008"], unitIds: [1], verseIds: ["demo-v112-1", "demo-v112-2", "demo-v112-3", "demo-v112-4"], pronunciationDay: null, weeklyTest: 1, gate: "七日回顾" },
+  ],
+  pronunciationDays: [],
+};

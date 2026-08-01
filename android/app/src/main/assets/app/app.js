@@ -43,6 +43,18 @@
   const alphabetGroupById = new Map(ALPHABET.groups.map((group) => [group.id, group]));
   const wordPronunciationById = new Map(PRONUNCIATION.pronunciations.map((item) => [item.id, item]));
   const wordPronunciationFormsByEntryId = new Map(Object.entries(PRONUNCIATION.entryForms || {}));
+  const DAY_COUNT = Math.max(1, Number(DATA.meta?.dayCount) || DATA.schedule.length || 1);
+  const WORD_COUNT = allWords.length;
+  const UNIT_COUNT = DATA.lessons.length;
+  const ALPHABET_COUNT = ALPHABET.letters.length;
+  const REVIEW_DAY_LIMIT = DAY_COUNT + Math.max(30, ...(DATA.meta?.reviewIntervals || [30]));
+  const HAS_PRONUNCIATION = DATA.pronunciationDays.length > 0;
+  const HAS_ALPHABET_AUDIO = ALPHABET.letters.some((letter) => Object.values(letter.audio || {}).some(Boolean));
+
+  const pronunciationNav = document.querySelector('[data-view="pronunciation"]');
+  if (pronunciationNav) pronunciationNav.hidden = !HAS_PRONUNCIATION;
+  const mainNavigation = document.querySelector(".main-nav");
+  if (mainNavigation && !HAS_PRONUNCIATION) mainNavigation.style.gridTemplateColumns = "repeat(4, 1fr)";
 
   const icon = (name) => {
     const paths = {
@@ -97,7 +109,7 @@
     settings: {
       sessionMinutes: 35,
       reviewLimit: 12,
-      pronunciation: true,
+      pronunciation: HAS_PRONUNCIATION,
       audioRate: 0.85,
       wordAudioRepeats: 3,
     },
@@ -122,12 +134,12 @@
         if (!isPlainObject(entry)) return [];
         const rating = boundedInteger(entry.rating, 0, 2, -1);
         if (rating < 0) return [];
-        return [{ day: boundedInteger(entry.day, 1, 142, 1), rating, at: validTimestamp(entry.at) || new Date(0).toISOString() }];
+        return [{ day: boundedInteger(entry.day, 1, REVIEW_DAY_LIMIT, 1), rating, at: validTimestamp(entry.at) || new Date(0).toISOString() }];
       }).slice(-20);
       const dictationHistory = (Array.isArray(item.dictationHistory) ? item.dictationHistory : []).flatMap((entry) => {
         if (!isPlainObject(entry) || typeof entry.correct !== "boolean") return [];
         return [{
-          day: boundedInteger(entry.day, 1, 142, 1),
+          day: boundedInteger(entry.day, 1, REVIEW_DAY_LIMIT, 1),
           correct: entry.correct,
           at: validTimestamp(entry.at) || new Date(0).toISOString(),
         }];
@@ -136,8 +148,8 @@
       const dictationCorrect = Math.min(dictationAttempts, boundedInteger(item.dictationCorrect, 0, 999999, dictationHistory.filter((entry) => entry.correct).length));
       return [[id, {
         seen: item.seen === true,
-        lastDay: boundedInteger(item.lastDay, 1, 142, 1),
-        dueDay: boundedInteger(item.dueDay, 1, 142, 1),
+        lastDay: boundedInteger(item.lastDay, 1, REVIEW_DAY_LIMIT, 1),
+        dueDay: boundedInteger(item.dueDay, 1, REVIEW_DAY_LIMIT, 1),
         lastRating: boundedInteger(item.lastRating, 0, 2, 0),
         successStreak: boundedInteger(item.successStreak, 0, 999, 0),
         history,
@@ -155,7 +167,7 @@
       return [[id, {
         attempts: boundedInteger(item.attempts, 0, 999999, 0),
         correct: typeof item.correct === "boolean" ? item.correct : null,
-        lastDay: boundedInteger(item.lastDay, 1, 142, 1),
+        lastDay: boundedInteger(item.lastDay, 1, REVIEW_DAY_LIMIT, 1),
       }]];
     }));
   }
@@ -182,7 +194,7 @@
       const average = Number(item.average);
       return [[id, {
         completed: item.completed === true,
-        day: boundedInteger(item.day, 1, 142, 1),
+        day: boundedInteger(item.day, 1, REVIEW_DAY_LIMIT, 1),
         scores,
         average: Number.isFinite(average) ? Math.max(0, Math.min(2, average)) : 0,
         attempts: boundedInteger(item.attempts, 0, 999999, 0),
@@ -218,7 +230,7 @@
   function normalizeDayProgress(value, verseProgress, savedVersion) {
     return Object.fromEntries(Object.entries(isPlainObject(value) ? value : {}).flatMap(([day, item]) => {
       const dayNumber = Number(day);
-      if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > 112 || !isPlainObject(item)) return [];
+      if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > DAY_COUNT || !isPlainObject(item)) return [];
       const record = {
         review: item.review === true,
         learn: item.learn === true,
@@ -251,7 +263,7 @@
     return {
       ...base,
       version: STATE_VERSION,
-      currentDay: Math.max(1, Math.min(112, Number(saved.currentDay) || 1)),
+      currentDay: Math.max(1, Math.min(DAY_COUNT, Number(saved.currentDay) || 1)),
       view: VALID_VIEWS.includes(saved.view) ? saved.view : base.view,
       courseStage: [0, 1, 2, 3].includes(stageValue) ? stageValue : base.courseStage,
       courseUnit: lessonById.has(courseUnitValue) ? courseUnitValue : null,
@@ -274,7 +286,7 @@
       settings: {
         sessionMinutes: [25, 35, 45].includes(sessionMinutes) ? sessionMinutes : base.settings.sessionMinutes,
         reviewLimit: [8, 12, 20].includes(reviewLimit) ? reviewLimit : base.settings.reviewLimit,
-        pronunciation: typeof settings.pronunciation === "boolean" ? settings.pronunciation : base.settings.pronunciation,
+        pronunciation: HAS_PRONUNCIATION && (typeof settings.pronunciation === "boolean" ? settings.pronunciation : base.settings.pronunciation),
         audioRate: [0.75, 0.85, 1].includes(audioRate) ? audioRate : base.settings.audioRate,
         wordAudioRepeats: boundedInteger(wordAudioRepeats, 1, 10, base.settings.wordAudioRepeats),
       },
@@ -340,11 +352,11 @@
   }
 
   function daySchedule(day = state.currentDay) {
-    return DATA.schedule[Math.max(0, Math.min(111, day - 1))];
+    return DATA.schedule[Math.max(0, Math.min(DAY_COUNT - 1, day - 1))] || DATA.schedule[0];
   }
 
   function requiredSteps() {
-    return state.settings.pronunciation ? ["review", "learn", "verse", "pronunciation"] : ["review", "learn", "verse"];
+    return state.settings.pronunciation && HAS_PRONUNCIATION ? ["review", "learn", "verse", "pronunciation"] : ["review", "learn", "verse"];
   }
 
   function dayCompletion(day = state.currentDay) {
@@ -389,7 +401,9 @@
   }
 
   function alphabetStepRail(active) {
-    return `<ol class="alphabet-step-rail" aria-label="字母学习四步">${["认识", "跟读", "听辨", "辨形"].map((label, index) => `<li class="${index < active ? "done" : index === active ? "active" : ""}" aria-current="${index === active ? "step" : "false"}"><span>${index < active ? icon("check") : index + 1}</span><b>${label}</b></li>`).join("")}</ol>`;
+    const labels = HAS_ALPHABET_AUDIO ? ["认识", "跟读", "听辨", "辨形"] : ["认识", "辨形"];
+    const normalizedActive = HAS_ALPHABET_AUDIO ? active : (active >= 3 ? 1 : 0);
+    return `<ol class="alphabet-step-rail" aria-label="字母学习步骤">${labels.map((label, index) => `<li class="${index < normalizedActive ? "done" : index === normalizedActive ? "active" : ""}" aria-current="${index === normalizedActive ? "step" : "false"}"><span>${index < normalizedActive ? icon("check") : index + 1}</span><b>${label}</b></li>`).join("")}</ol>`;
   }
 
   function dueWordIds(day = state.currentDay) {
@@ -415,7 +429,7 @@
   function renderView() {
     if (!VALID_VIEWS.includes(state.view)) state.view = "today";
     document.querySelectorAll(".nav-item").forEach((button) => button.classList.toggle("active", button.dataset.view === state.view));
-    $("topbarSubtitle").textContent = `第 ${state.currentDay} / 112 天`;
+    $("topbarSubtitle").textContent = `第 ${state.currentDay} / ${DAY_COUNT} 天`;
     if (state.view === "today") renderToday();
     if (state.view === "course") renderCourse();
     if (state.view === "library") renderLibrary();
@@ -431,29 +445,29 @@
     const due = dueWordIds();
     const newWords = schedule.wordIds.map((id) => wordById.get(id)).filter(Boolean);
     const lessonNames = schedule.unitIds.map((id) => lessonById.get(id)?.title).filter(Boolean).join("、");
-    const pronId = schedule.pronunciationDay || ((state.currentDay - 1) % 28) + 1;
-    const pronDay = DATA.pronunciationDays[pronId - 1];
+    const pronId = HAS_PRONUNCIATION ? (schedule.pronunciationDay || ((state.currentDay - 1) % DATA.pronunciationDays.length) + 1) : null;
+    const pronDay = pronId ? DATA.pronunciationDays.find((day) => Number(day.id) === Number(pronId)) : null;
     const completion = dayCompletion();
     const allDone = completion === 100;
     const firstPending = requiredSteps().find((step) => !progress[step]);
     const steps = [
       { key: "review", title: "复习旧词", detail: due.length ? `${due.length} 个词到期，先回忆再看答案` : "当前无到期词，用最近词条热身", icon: "refresh" },
-      { key: "learn", title: "学习新词", detail: `${newWords.length} 个新词 · ${lessonNames || "按课程顺序"}`, icon: "book" },
+      { key: "learn", title: schedule.reviewOnly ? "巩固词汇" : "学习新词", detail: `${newWords.length} 个词 · ${lessonNames || "按课程顺序"}`, icon: "book" },
       { key: "verse", title: "经文实战", detail: `${schedule.verseIds.length} 条语境，先找词再看中文`, icon: "layers" },
-      ...(state.settings.pronunciation ? [{ key: "pronunciation", title: "发音训练", detail: `第 ${pronId} 天 · ${pronunciationDayTitle(pronDay)}`, icon: "mic" }] : []),
+      ...(state.settings.pronunciation && pronDay ? [{ key: "pronunciation", title: "发音训练", detail: `第 ${pronId} 天 · ${pronunciationDayTitle(pronDay)}`, icon: "mic" }] : []),
     ];
 
     mainView.innerHTML = `<div class="page today-page">
       <div class="greeting"><div class="arabic" lang="ar">السَّلَامُ عَلَيْكُمْ</div><p>愿今天的学习清楚、稳定、可回忆。</p></div>
       <section class="today-panel">
         <div class="today-progress-head">
-          <div class="today-progress-copy"><h1>第 ${state.currentDay} / 112 天</h1><span>今日学习进度</span></div>
+          <div class="today-progress-copy"><h1>第 ${state.currentDay} / ${DAY_COUNT} 天</h1><span>今日学习进度</span></div>
           <div class="today-progress-ring" style="--progress:${completion}" role="img" aria-label="今日完成 ${completion}%"><strong>${completion}%</strong></div>
         </div>
         <div class="progress-track" aria-label="今日完成 ${completion}%"><span style="width:${completion}%"></span></div>
-        <div class="today-meta"><span>已学 ${learnedWords()} / 465 词</span><span>今日约 ${state.settings.sessionMinutes} 分钟</span></div>
+        <div class="today-meta"><span>已学 ${learnedWords()} / ${WORD_COUNT} 词</span><span>今日约 ${state.settings.sessionMinutes} 分钟</span></div>
         <button class="primary-button wide" type="button" data-action="${allDone ? "next-day" : "start-step"}" ${allDone ? "" : `data-step="${firstPending}"`}>
-          ${icon(allDone ? "calendar" : "book")}${allDone ? (state.currentDay === 112 ? "课程已完成" : "进入下一学习日") : "继续今日学习"}
+          ${icon(allDone ? "calendar" : "book")}${allDone ? (state.currentDay === DAY_COUNT ? "课程已完成" : "进入下一学习日") : "继续今日学习"}
         </button>
       </section>
       <div class="section-title"><h2>今日学习路径</h2><span>按顺序完成</span></div>
@@ -464,7 +478,7 @@
           <span class="path-arrow">${icon("arrow")}</span>
         </button>`).join("")}
       </div>
-      ${schedule.weeklyTest ? `<div class="gate-note"><b>本日含第 ${schedule.weeklyTest} 次周测。</b> 完成四步后，从“课程”抽查本周词条；先闭卷作答，再核对答案。</div>` : ""}
+      ${schedule.weeklyTest ? `<div class="gate-note"><b>本日含第 ${schedule.weeklyTest} 次周测。</b> 完成今日步骤后，从“课程”抽查本周词条；先闭卷作答，再核对答案。</div>` : ""}
       ${schedule.gate ? `<div class="gate-note"><b>阶段复习 ${schedule.gate}。</b> 请完成词义回忆、经文定位和发音练习。</div>` : ""}
       <div class="summary-strip">
         <div class="summary-item"><strong>${due.length}</strong><span>今日待复习</span></div>
@@ -491,11 +505,11 @@
     const lessons = DATA.lessons.filter((lesson) => !state.courseStage || lesson.stage === state.courseStage);
     const stageNames = ["全部", "句子骨架", "主题词汇", "动词词形"];
     mainView.innerHTML = `<div class="page course-page">
-      <div class="page-heading"><h1>112 天课程</h1><p>39 课按句子骨架、主题词汇、动词词形依次推进。</p></div>
+      <div class="page-heading"><h1>${DAY_COUNT} 天课程</h1><p>${UNIT_COUNT} 课按词汇、完整经文语境和主动回忆依次推进。</p></div>
       <button class="alphabet-course-entry" type="button" data-action="open-alphabet">
         <span class="alphabet-entry-glyph arabic" lang="ar">ا ب ت</span>
-        <span class="alphabet-entry-copy"><strong>先学阿拉伯语字母</strong><small>逐音发音 · 易混对比 · 听辨与辨形练习</small></span>
-        <span class="alphabet-entry-progress">${masteredAlphabetLetters()} / 28${icon("arrow")}</span>
+        <span class="alphabet-entry-copy"><strong>先学阿拉伯语字母</strong><small>${HAS_ALPHABET_AUDIO ? "逐音发音 · 易混对比 · 听辨与辨形练习" : "发音部位 · 字形位置 · 辨形练习"}</small></span>
+        <span class="alphabet-entry-progress">${masteredAlphabetLetters()} / ${ALPHABET_COUNT}${icon("arrow")}</span>
       </button>
       <div class="tabs" role="tablist">${stageNames.map((name, index) => `<button class="tab ${state.courseStage === index ? "active" : ""}" type="button" data-action="set-stage" data-stage="${index}">${name}</button>`).join("")}</div>
       <div class="lesson-list">${lessons.map((lesson) => {
@@ -515,7 +529,7 @@
       return;
     }
     const mastered = masteredAlphabetLetters();
-    const percent = Math.round((mastered / 28) * 100);
+    const percent = ALPHABET_COUNT ? Math.round((mastered / ALPHABET_COUNT) * 100) : 0;
     const nextLetter = ALPHABET.letters.find((letter) => !state.alphabetProgress[letter.id]?.mastered) || ALPHABET.letters[0];
     const tabs = [
       { id: "overview", label: "学习路径" },
@@ -540,10 +554,10 @@
       <section class="alphabet-form-example"><h2>四种位置形示例</h2><div>${["isolated", "initial", "medial", "final"].map((key, index) => `<span><small>${["独立", "词首", "词中", "词尾"][index]}</small><b class="arabic" lang="ar">${alphabetLetterById.get("a02").forms[key]}</b></span>`).join("")}</div><p>ب 可以双向连接；ا、د、ذ、ر、ز、و 不能继续连接左侧后一个字母。</p></section>
     </div>`;
     mainView.innerHTML = `<div class="page alphabet-page">
-      <div class="alphabet-page-head"><button class="back-button" type="button" data-action="close-alphabet">${icon("back")}返回 112 天课程</button><div><h1>阿拉伯语字母</h1><p>逐音听清，再做听辨与辨形练习</p></div></div>
+      <div class="alphabet-page-head"><button class="back-button" type="button" data-action="close-alphabet">${icon("back")}返回 ${DAY_COUNT} 天课程</button><div><h1>阿拉伯语字母</h1><p>${HAS_ALPHABET_AUDIO ? "逐音听清，再做听辨与辨形练习" : "学习发音部位、字形位置与辨形"}</p></div></div>
       <section class="alphabet-overview">
-        <div class="alphabet-overview-progress"><span>已掌握 <b>${mastered}</b> / 28</span><div role="progressbar" aria-valuemin="0" aria-valuemax="28" aria-valuenow="${mastered}"><i style="width:${percent}%"></i></div><small>每个字母须完成逐音跟读、听辨和辨形</small></div>
-        <button class="primary-button" type="button" data-action="open-alphabet-letter" data-letter-id="${nextLetter.id}">${mastered === 28 ? "重新复习" : "继续学习"}${icon("arrow")}</button>
+        <div class="alphabet-overview-progress"><span>已掌握 <b>${mastered}</b> / ${ALPHABET_COUNT}</span><div role="progressbar" aria-valuemin="0" aria-valuemax="${ALPHABET_COUNT}" aria-valuenow="${mastered}"><i style="width:${percent}%"></i></div><small>${HAS_ALPHABET_AUDIO ? "每个字母须完成逐音跟读、听辨和辨形" : "演示包通过发音部位说明和辨形练习完成学习"}</small></div>
+        <button class="primary-button" type="button" data-action="open-alphabet-letter" data-letter-id="${nextLetter.id}">${mastered === ALPHABET_COUNT ? "重新复习" : "继续学习"}${icon("arrow")}</button>
       </section>
       ${alphabetStepRail(mastered ? 1 : 0)}
       <div class="tabs alphabet-tabs" role="tablist">${tabs.map((tab) => `<button class="tab ${state.alphabetTab === tab.id ? "active" : ""}" type="button" data-action="set-alphabet-tab" data-alphabet-tab="${tab.id}">${tab.label}</button>`).join("")}</div>
@@ -571,7 +585,7 @@
         <p class="eyebrow">第 ${lesson.index} 课 · 第 ${lesson.stage} 阶段</p>
         <h1>${escapeHtml(lesson.title)}</h1>
         <p>${escapeHtml(lesson.overview || "按词类与语境建立识别路线，再用闭卷回忆验证掌握。")}</p>
-        <div class="lesson-meta"><span>${lesson.words.length} 个词条</span><span>${lesson.verses.length} 条经文</span><span>来源第 ${lesson.first}–${lesson.last} 页</span></div>
+        <div class="lesson-meta"><span>${lesson.words.length} 个词条</span><span>${lesson.verses.length} 条经文</span><span>${escapeHtml(lesson.sourceRange || `来源第 ${lesson.first}–${lesson.last} 页`)}</span></div>
         <button class="primary-button wide" type="button" data-action="start-unit" data-unit="${lesson.index}">${icon("book")}开始本课词汇</button>
       </section>
       <div class="section-title"><h2>本课全部词汇</h2><span>${progress.completed}/${progress.total} 已学习</span></div>
@@ -595,7 +609,7 @@
     const words = libraryWords();
     const filters = [{ id: "all", label: "全部" }, { id: "learned", label: "已学" }, { id: "due", label: "待复习" }, { id: "favorite", label: "收藏" }];
     mainView.innerHTML = `<div class="page library-page">
-      <div class="page-heading"><h1>词库</h1><p>${state.libraryUnit ? `第 ${state.libraryUnit} 课 · ` : ""}共 465 个核心学习词条，可按中文、阿拉伯文或词性检索。</p></div>
+      <div class="page-heading"><h1>词库</h1><p>${state.libraryUnit ? `第 ${state.libraryUnit} 课 · ` : ""}共 ${WORD_COUNT} 个学习词条，全部显示，可按中文、阿拉伯文或词性检索。</p></div>
       <label class="search-box">${icon("search")}<input id="librarySearch" type="search" value="${escapeHtml(state.libraryQuery)}" placeholder="搜索词义、阿拉伯词或词性" autocomplete="off"></label>
       <div class="tabs">${filters.map((filter) => `<button class="tab ${state.libraryFilter === filter.id ? "active" : ""}" type="button" data-action="set-library-filter" data-filter="${filter.id}">${filter.label}</button>`).join("")}</div>
       ${state.libraryUnit ? `<div class="back-line"><button class="back-button" type="button" data-action="clear-unit-filter">${icon("back")}查看全部课程</button><span>${words.length} 词</span></div>` : ""}
@@ -645,7 +659,7 @@
   };
 
   function pronunciationDayTitle(day) {
-    return PRONUNCIATION_DAY_TITLES[day.title] || day.title;
+    return day ? (PRONUNCIATION_DAY_TITLES[day.title] || day.title) : "";
   }
 
   function pronunciationTag(task) {
@@ -653,7 +667,7 @@
   }
 
   function pronunciationFocus(day) {
-    return PRONUNCIATION_FOCUS[day.focus] || day.focus;
+    return day ? (PRONUNCIATION_FOCUS[day.focus] || day.focus) : "";
   }
 
   function resolvedPronunciationTask(task) {
@@ -710,8 +724,13 @@
   }
 
   function renderPronunciation() {
+    if (!HAS_PRONUNCIATION) {
+      mainView.innerHTML = `<div class="page pronunciation-page"><div class="page-heading"><h1>发音训练</h1><p>当前公开演示版不含任何音频；词汇、完整经文、字母辨形和复习功能仍可正常使用。</p></div></div>`;
+      return;
+    }
     const completedTasks = Object.values(state.pronunciationProgress).filter((item) => item.completed).length;
-    const percent = Math.round((completedTasks / 84) * 100);
+    const pronunciationTaskCount = pronunciationTaskById.size;
+    const percent = pronunciationTaskCount ? Math.round((completedTasks / pronunciationTaskCount) * 100) : 0;
     const recentResults = Object.values(state.pronunciationProgress)
       .filter((item) => item.completed && Number.isFinite(item.average))
       .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
@@ -726,7 +745,7 @@
         <button class="primary-button wide" type="button" data-action="start-pron-day" data-pron-day="${todayPronId}">${icon("mic")}继续第 ${todayPronId} 天 · ${escapeHtml(pronunciationDayTitle(todayPron))}</button>
         ${latest ? `<div class="pron-latest"><span>最近一次</span><strong>${Math.round((latest.average / 2) * 100)} 分</strong><small>${escapeHtml(latest.comparisonResultLabel || "已完成 A/B 对比")}</small></div>` : ""}
       </section>
-      <div class="section-title"><h2>完整路线</h2><span>84 项录音任务</span></div>
+      <div class="section-title"><h2>完整路线</h2><span>${pronunciationTaskCount} 项录音任务</span></div>
       <div class="pron-list">${DATA.pronunciationDays.map((day) => {
         const completed = day.tasks.filter((task) => state.pronunciationProgress[task.id]?.completed).length;
         return `<button class="pron-row" type="button" data-action="start-pron-day" data-pron-day="${day.id}">
@@ -747,13 +766,13 @@
         <div class="profile-stat"><strong>${masteredWords()}</strong><span>稳定掌握</span></div>
         <div class="profile-stat"><strong>${completedDays}</strong><span>完整学习日</span></div>
       </div>
-      <button class="alphabet-profile-progress" type="button" data-action="open-alphabet"><span class="arabic" lang="ar">ا ب ت ث</span><span><strong>字母基础 ${masteredAlphabetLetters()} / 28</strong><small>继续逐音跟读、易混对比与听辨练习</small></span>${icon("arrow")}</button>
+      <button class="alphabet-profile-progress" type="button" data-action="open-alphabet"><span class="arabic" lang="ar">ا ب ت ث</span><span><strong>字母基础 ${masteredAlphabetLetters()} / ${ALPHABET_COUNT}</strong><small>${HAS_ALPHABET_AUDIO ? "继续逐音跟读、易混对比与听辨练习" : "继续发音部位学习与辨形练习"}</small></span>${icon("arrow")}</button>
       <div class="section-title"><h2>学习设置</h2><span>自动保存</span></div>
       <div class="settings-list">
         <label class="setting-row"><span class="setting-copy"><strong>每日学习时长</strong><small>用于首页显示，不强制倒计时</small></span><select data-setting="sessionMinutes"><option value="25" ${state.settings.sessionMinutes === 25 ? "selected" : ""}>25 分钟</option><option value="35" ${state.settings.sessionMinutes === 35 ? "selected" : ""}>35 分钟</option><option value="45" ${state.settings.sessionMinutes === 45 ? "selected" : ""}>45 分钟</option></select></label>
         <label class="setting-row"><span class="setting-copy"><strong>每次复习上限</strong><small>超过上限的词顺延到下次</small></span><select data-setting="reviewLimit"><option value="8" ${state.settings.reviewLimit === 8 ? "selected" : ""}>8 词</option><option value="12" ${state.settings.reviewLimit === 12 ? "selected" : ""}>12 词</option><option value="20" ${state.settings.reviewLimit === 20 ? "selected" : ""}>20 词</option></select></label>
-        <label class="setting-row"><span class="setting-copy"><strong>每日发音训练</strong><small>关闭后今日路径只保留三步</small></span><span class="switch"><input type="checkbox" data-setting="pronunciation" ${state.settings.pronunciation ? "checked" : ""}><span></span></span></label>
-        <label class="setting-row"><span class="setting-copy"><strong>范读速度</strong><small>影响词汇与发音练习的播放速度</small></span><select data-setting="audioRate"><option value="0.75" ${state.settings.audioRate === 0.75 ? "selected" : ""}>0.75×</option><option value="0.85" ${state.settings.audioRate === 0.85 ? "selected" : ""}>0.85×</option><option value="1" ${state.settings.audioRate === 1 ? "selected" : ""}>1×</option></select></label>
+        ${HAS_PRONUNCIATION ? `<label class="setting-row"><span class="setting-copy"><strong>每日发音训练</strong><small>关闭后今日路径只保留三步</small></span><span class="switch"><input type="checkbox" data-setting="pronunciation" ${state.settings.pronunciation ? "checked" : ""}><span></span></span></label>` : ""}
+        ${HAS_PRONUNCIATION || HAS_ALPHABET_AUDIO ? `<label class="setting-row"><span class="setting-copy"><strong>范读速度</strong><small>影响词汇与发音练习的播放速度</small></span><select data-setting="audioRate"><option value="0.75" ${state.settings.audioRate === 0.75 ? "selected" : ""}>0.75×</option><option value="0.85" ${state.settings.audioRate === 0.85 ? "selected" : ""}>0.85×</option><option value="1" ${state.settings.audioRate === 1 ? "selected" : ""}>1×</option></select></label>` : ""}
       </div>
       ${IS_NATIVE_ANDROID ? "" : `<div class="section-title"><h2>安装</h2></div><div class="button-row"><button class="secondary-button" type="button" data-action="install-app">${icon("download")}安装到设备</button></div>`}
       <div class="section-title"><h2>数据</h2><span>成绩仅保存在本机</span></div>
@@ -762,7 +781,7 @@
         <button class="secondary-button" type="button" data-action="import-data">${icon("upload")}导入学习备份</button>
         <button class="danger-button" type="button" data-action="reset-data">${icon("trash")}清空学习数据</button>
       </div>
-      <div class="source-note">学习进度和录音只保存在本机，不会自动上传。建议定期导出学习备份。</div>
+      <div class="source-note">学习进度只保存在本机，不会自动上传。建议定期导出学习备份。</div>
     </div>`;
   }
 
@@ -785,7 +804,7 @@
     }
     if (step === "learn") openWordSession(schedule.wordIds, "learn", "learn");
     if (step === "verse") openVerseSession(schedule.verseIds, "verse");
-    if (step === "pronunciation") {
+    if (step === "pronunciation" && HAS_PRONUNCIATION) {
       const pronId = schedule.pronunciationDay || ((state.currentDay - 1) % 28) + 1;
       openPronunciationSession(pronId, "pronunciation");
     }
@@ -903,7 +922,7 @@
     const heard = new Set(currentSession.heardKinds);
     const contrast = alphabetContrast(letter);
     const contrastLetters = contrast ? contrast.letterIds.map((id) => alphabetLetterById.get(id)).filter(Boolean) : [];
-    const heardRequired = ["name", "fatha", "kasra", "damma", "example"].filter((kind) => heard.has(kind)).length;
+    const heardRequired = HAS_ALPHABET_AUDIO ? ["name", "fatha", "kasra", "damma", "example"].filter((kind) => heard.has(kind)).length : 5;
     sessionContent.innerHTML = `<div class="alphabet-lesson">
       ${alphabetStepRail(heardRequired ? 1 : 0)}
       <section class="alphabet-letter-hero">
@@ -911,20 +930,20 @@
         <h1>字母名：<span class="arabic" lang="ar">${letter.name}</span></h1>
         <p>${escapeHtml(letter.category)}</p>
       </section>
-      <section class="alphabet-sound-studio">
+      ${HAS_ALPHABET_AUDIO ? `<section class="alphabet-sound-studio">
         <div class="alphabet-section-heading"><h2>逐音跟读</h2><span data-alphabet-audio-status aria-live="polite">${heardRequired ? `已听 ${heardRequired} / 5` : "点按每个发音，跟读 3 遍"}</span></div>
         <div class="alphabet-sound-grid">${ALPHABET_AUDIO_KINDS.map((unit) => {
           const listened = heard.has(unit.key);
           return `<button class="alphabet-sound-button ${listened ? "listened" : ""}" type="button" data-session-action="play-alphabet-unit" data-letter-id="${letter.id}" data-audio-kind="${unit.key}" aria-label="播放${unit.label} ${alphabetAudioText(letter, unit.key)}"><small>${unit.label}</small><b class="arabic" lang="ar">${alphabetAudioText(letter, unit.key)}</b><span>${icon(currentSession.activeAudioKind === unit.key ? "pause" : "volume")}</span><i>${listened ? icon("check") : "未听"}</i></button>`;
         }).join("")}</div>
         <div class="alphabet-playback-controls"><span>${icon("refresh")}跟读 3 遍</span><div role="group" aria-label="字母发音速度">${[0.75, 0.85, 1].map((speed) => `<button type="button" data-session-action="set-alphabet-audio-speed" data-speed="${speed}" class="${state.settings.audioRate === speed ? "active" : ""}" aria-pressed="${state.settings.audioRate === speed}">${speed}×</button>`).join("")}</div></div>
-      </section>
+      </section>` : ""}
       <section class="alphabet-teaching-copy"><div class="alphabet-section-heading"><h2>发音动作</h2><span>${escapeHtml(letter.category)}</span></div><p>${escapeHtml(letter.articulation)}</p><div class="alphabet-mistake"><strong>避免这样读</strong><span>${escapeHtml(letter.mistake)}</span></div></section>
-      ${contrast ? `<section class="alphabet-contrast"><div class="alphabet-section-heading"><h2>易混音对比 · ${escapeHtml(contrast.title)}</h2><span>点按试听开口音</span></div><p>${escapeHtml(contrast.cue)}</p><div>${contrastLetters.map((item) => `<button type="button" data-session-action="play-alphabet-unit" data-letter-id="${item.id}" data-audio-kind="fatha" aria-label="播放 ${item.vowels[0]}"><b class="arabic" lang="ar">${item.vowels[0]}</b>${icon("volume")}</button>`).join("")}</div></section>` : ""}
-      <section class="alphabet-example"><div class="alphabet-section-heading"><h2>例词 · 古兰经高频形式</h2><span>${heard.has("example") ? "已听" : "未听"}</span></div><button type="button" data-session-action="play-alphabet-unit" data-letter-id="${letter.id}" data-audio-kind="example"><b class="arabic" lang="ar">${letter.example.word}</b><span>${escapeHtml(letter.example.meaning)}</span>${icon("volume")}</button></section>
+      ${contrast ? `<section class="alphabet-contrast"><div class="alphabet-section-heading"><h2>易混字形对比 · ${escapeHtml(contrast.title)}</h2><span>${HAS_ALPHABET_AUDIO ? "点按试听开口音" : "比较点位与骨架"}</span></div><p>${escapeHtml(contrast.cue)}</p><div>${contrastLetters.map((item) => HAS_ALPHABET_AUDIO ? `<button type="button" data-session-action="play-alphabet-unit" data-letter-id="${item.id}" data-audio-kind="fatha" aria-label="播放 ${item.vowels[0]}"><b class="arabic" lang="ar">${item.vowels[0]}</b>${icon("volume")}</button>` : `<span><b class="arabic" lang="ar">${item.letter}</b></span>`).join("")}</div></section>` : ""}
+      <section class="alphabet-example"><div class="alphabet-section-heading"><h2>例词 · 古兰经高频形式</h2></div>${HAS_ALPHABET_AUDIO ? `<button type="button" data-session-action="play-alphabet-unit" data-letter-id="${letter.id}" data-audio-kind="example"><b class="arabic" lang="ar">${letter.example.word}</b><span>${escapeHtml(letter.example.meaning)}</span>${icon("volume")}</button>` : `<div><b class="arabic" lang="ar">${letter.example.word}</b><span>${escapeHtml(letter.example.meaning)}</span></div>`}</section>
       <section class="alphabet-forms"><div class="alphabet-section-heading"><h2>字形位置</h2><span>${letter.joining === "right" ? "只接右侧" : "双向连接"}</span></div><div class="alphabet-form-strip" aria-label="${letter.name}的四种位置字形">${formEntries.map(([label, glyph]) => `<span><small>${label}</small><b class="arabic" lang="ar">${glyph}</b></span>`).join("")}</div></section>
-      <div class="alphabet-gate-status" data-alphabet-gate-status>${heardRequired === 5 ? "五项发音已完成，可以进入听辨" : `还需完整跟读 ${5 - heardRequired} 项发音`}</div>
-      <button class="primary-button wide" type="button" data-session-action="start-alphabet-listening-quiz" ${heardRequired === 5 ? "" : "disabled"}>进入听辨${heardRequired === 5 ? "" : " · 请先听完全部发音"}</button>
+      <div class="alphabet-gate-status" data-alphabet-gate-status>${HAS_ALPHABET_AUDIO ? (heardRequired === 5 ? "五项发音已完成，可以进入听辨" : `还需完整跟读 ${5 - heardRequired} 项发音`) : "已完成字形与发音部位学习，可以进入辨形"}</div>
+      <button class="primary-button wide" type="button" data-session-action="start-alphabet-listening-quiz" ${heardRequired === 5 ? "" : "disabled"}>${HAS_ALPHABET_AUDIO ? `进入听辨${heardRequired === 5 ? "" : " · 请先听完全部发音"}` : "进入辨形练习"}</button>
     </div>`;
   }
 
@@ -969,7 +988,7 @@
       }).join("")}</div>
       <div class="alphabet-quiz-feedback ${currentSession.quizCorrect ? "correct" : answered ? "wrong" : ""}" aria-live="polite">${currentSession.quizCorrect ? `正确：${letter.forms.medial} 是 ${letter.name} 的词中形。` : answered ? "这不是目标字母，请比较点位后再选一次。" : "请选择一个答案。"}</div>
       <button class="primary-button wide" type="button" data-session-action="next-alphabet-letter" ${currentSession.quizCorrect ? "" : "disabled"}>${currentSession.index + 1 === currentSession.items.length ? (currentSession.items.length === 1 ? "完成本次" : "完成本组") : "学习下一个字母"}</button>
-      <button class="back-button alphabet-quiz-back" type="button" data-session-action="back-alphabet-listening">${icon("back")}返回听辨</button>
+      <button class="back-button alphabet-quiz-back" type="button" data-session-action="back-alphabet-listening">${icon("back")}${HAS_ALPHABET_AUDIO ? "返回听辨" : "返回字母学习"}</button>
     </div>`;
   }
 
@@ -1085,7 +1104,7 @@
     state.alphabetProgress[letter.id] = {
       ...previous,
       seen: true,
-      mastered: previous.mastered === true || (correct && currentSession.listeningQuizCorrect),
+      mastered: previous.mastered === true || (correct && (!HAS_ALPHABET_AUDIO || currentSession.listeningQuizCorrect)),
       attempts: Number(previous.attempts || 0) + 1,
       correct: Number(previous.correct || 0) + (correct ? 1 : 0),
       listenedKinds: [...currentSession.heardKinds],
@@ -1101,7 +1120,7 @@
     if (!currentSession.quizCorrect) return;
     currentSession.completed += 1;
     if (currentSession.index + 1 >= currentSession.items.length) {
-      renderCompletion(currentSession.items.length === 1 ? "本次字母学习完成" : "本组字母完成", `已完成 ${currentSession.items.length} 个字母的逐音跟读、听辨与辨形练习。`);
+      renderCompletion(currentSession.items.length === 1 ? "本次字母学习完成" : "本组字母完成", HAS_ALPHABET_AUDIO ? `已完成 ${currentSession.items.length} 个字母的逐音跟读、听辨与辨形练习。` : `已完成 ${currentSession.items.length} 个字母的发音部位学习与辨形练习。`);
       return;
     }
     currentSession.index += 1;
@@ -1322,13 +1341,13 @@
       <div class="flash-main"><div class="flash-main-inner">
         <div class="word-study-mode" role="group" aria-label="词汇学习方式">
           <button type="button" data-session-action="set-word-mode" data-mode="study" class="${isDictation ? "" : "active"}" aria-pressed="${!isDictation}">看词学习</button>
-          <button type="button" data-session-action="set-word-mode" data-mode="dictation" class="${isDictation ? "active" : ""}" aria-pressed="${isDictation}" ${audioReady ? "" : "disabled"}>听写输入</button>
+          ${audioReady ? `<button type="button" data-session-action="set-word-mode" data-mode="dictation" class="${isDictation ? "active" : ""}" aria-pressed="${isDictation}">听写输入</button>` : ""}
         </div>
         ${pronunciationForms.length > 1 ? `<div class="pronunciation-form-switcher" role="group" aria-label="选择本词条的发音词形"><span>本卡含 ${pronunciationForms.length} 个词形</span><div dir="rtl">${pronunciationForms.map((form, index) => `<button type="button" data-session-action="set-word-pronunciation-form" data-form-index="${index}" class="${index === currentSession.pronunciationFormIndex ? "active" : ""}" aria-pressed="${index === currentSession.pronunciationFormIndex}" lang="ar">${escapeHtml(form.displayText)}</button>`).join("")}</div></div>` : ""}
         ${isDictation
           ? `<div class="dictation-cue"><span>听写</span><strong>先听发音，不看答案</strong><small>元音符号可不输入，辅音字母必须写对</small></div>`
           : `<div class="flash-arabic arabic" lang="ar">${escapeHtml(displayedArabic)}</div>`}
-        <div class="word-audio-player four-layer-player">
+        ${audioReady ? `<div class="word-audio-player four-layer-player">
           ${pronunciation ? `<div class="audio-layer-tabs" role="tablist" aria-label="四层发音">${Object.entries(WORD_AUDIO_LAYER_LABELS).map(([key, label]) => `<button type="button" role="tab" data-session-action="set-word-audio-layer" data-layer="${key}" class="${layerKey === key ? "active" : ""}" aria-selected="${layerKey === key}" ${isPronunciationLayerAvailable(pronunciation, key) ? "" : "disabled"}>${pronunciation.layers?.[key]?.labelChinese ? escapeHtml(pronunciation.layers[key].labelChinese) : label}</button>`).join("")}</div>` : ""}
           ${renderWordLayerTeaching(pronunciation, layerKey)}
           <div class="layer-play-actions">
@@ -1342,7 +1361,7 @@
             <label class="word-repeat-control"><span>循环</span><select data-session-setting="word-audio-repeats" aria-label="单词循环播放次数" ${wordAudioPlaying ? "disabled" : ""}>${Array.from({ length: 10 }, (_, index) => index + 1).map((count) => `<option value="${count}" ${repeatCount === count ? "selected" : ""}>${count} 遍</option>`).join("")}</select></label>
             <div class="word-speed-control" role="group" aria-label="单词播放速度"><span>速度</span>${[[0.75, "慢速"], [1, "正常"]].map(([speed, label]) => `<button type="button" data-session-action="set-word-audio-speed" data-speed="${speed}" class="${wordAudioRate() === speed ? "active" : ""}" aria-pressed="${wordAudioRate() === speed}">${label}</button>`).join("")}</div>
           </div>
-        </div>
+        </div>` : ""}
         ${isDictation ? `<form class="dictation-form" data-dictation-form novalidate>
           <label for="dictationInput">听到什么，就输入什么</label>
           <input id="dictationInput" data-dictation-input type="text" dir="rtl" lang="ar" inputmode="text" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="100" value="${escapeHtml(currentSession.dictationInput)}" placeholder="اكتب الكلمة هنا" aria-describedby="dictationHelp dictationFeedback" ${dictationComplete ? "disabled" : ""}>
@@ -1603,7 +1622,7 @@
       ...previous,
       seen: true,
       lastDay: state.currentDay,
-      dueDay: Math.min(142, state.currentDay + interval),
+      dueDay: Math.min(REVIEW_DAY_LIMIT, state.currentDay + interval),
       lastRating: rating,
       successStreak,
       history: [...(previous.history || []), { day: state.currentDay, rating, at: new Date().toISOString() }].slice(-20),
@@ -2328,7 +2347,7 @@
     if (!button) return;
     const action = button.dataset.action;
     if (action === "start-step") startStep(button.dataset.step);
-    if (action === "next-day" && state.currentDay < 112) { state.currentDay += 1; saveState(); renderToday(); }
+    if (action === "next-day" && state.currentDay < DAY_COUNT) { state.currentDay += 1; saveState(); renderToday(); }
     if (action === "set-stage") { state.courseStage = Number(button.dataset.stage); saveState(); renderCourse(); }
     if (action === "open-alphabet") { state.view = "course"; state.courseMode = "alphabet"; state.courseUnit = null; state.alphabetGroup = null; saveState(); renderView(); }
     if (action === "close-alphabet") { state.courseMode = "lessons"; state.alphabetGroup = null; saveState(); renderCourse(); }
@@ -2448,14 +2467,14 @@
         });
       }
     }
-    if (action === "start-alphabet-listening-quiz") { currentSession.alphabetStep = "listening"; currentSession.listeningQuizAudioPlayed = false; currentSession.listeningQuizAnswer = ""; currentSession.listeningQuizCorrect = false; sessionLayer.scrollTop = 0; renderSession(); }
+    if (action === "start-alphabet-listening-quiz") { currentSession.alphabetStep = HAS_ALPHABET_AUDIO ? "listening" : "quiz"; currentSession.listeningQuizAudioPlayed = false; currentSession.listeningQuizAnswer = ""; currentSession.listeningQuizCorrect = !HAS_ALPHABET_AUDIO; currentSession.quizAnswer = ""; currentSession.quizCorrect = false; sessionLayer.scrollTop = 0; renderSession(); }
     if (action === "play-alphabet-quiz-audio") playAlphabetQuizAudio();
     if (action === "answer-alphabet-listening") answerAlphabetListeningQuiz(button.dataset.audioKind);
     if (action === "go-alphabet-shape-quiz") { currentSession.alphabetStep = "quiz"; currentSession.quizAnswer = ""; currentSession.quizCorrect = false; sessionLayer.scrollTop = 0; renderSession(); }
     if (action === "answer-alphabet-quiz") answerAlphabetQuiz(button.dataset.letterId);
     if (action === "next-alphabet-letter") nextAlphabetLetter();
     if (action === "back-alphabet-learn") { currentSession.alphabetStep = "learn"; currentSession.listeningQuizAnswer = ""; currentSession.listeningQuizCorrect = false; sessionLayer.scrollTop = 0; renderSession(); }
-    if (action === "back-alphabet-listening") { currentSession.alphabetStep = "listening"; currentSession.quizAnswer = ""; currentSession.quizCorrect = false; sessionLayer.scrollTop = 0; renderSession(); }
+    if (action === "back-alphabet-listening") { currentSession.alphabetStep = HAS_ALPHABET_AUDIO ? "listening" : "learn"; currentSession.quizAnswer = ""; currentSession.quizCorrect = false; sessionLayer.scrollTop = 0; renderSession(); }
     if (action === "close-session") closeSession();
   });
 

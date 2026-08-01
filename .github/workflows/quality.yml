@@ -20,11 +20,15 @@ jobs:
           node --check web/data/course-data.js
           node --check web/data/alphabet-data.js
           node --check web/data/pronunciation-data.js
+          node --check scripts/validate-community-content.mjs
+
+      - name: Validate public no-audio content
+        run: node scripts/validate-community-content.mjs
 
       - name: Reject private release assets
         shell: bash
         run: |
-          if find . -type f \( -iname '*.apk' -o -iname '*.aab' -o -iname '*.jks' -o -iname '*.keystore' -o -iname '*.mp3' -o -iname '*.m4a' -o -iname '*.aac' -o -iname '*.wav' -o -iname '*.pdf' \) -print -quit | grep -q .; then
+          if find . -type f \( -iname '*.apk' -o -iname '*.aab' -o -iname '*.jks' -o -iname '*.keystore' -o -iname '*.mp3' -o -iname '*.m4a' -o -iname '*.aac' -o -iname '*.wav' -o -iname '*.ogg' -o -iname '*.oga' -o -iname '*.flac' -o -iname '*.opus' -o -iname '*.webm' -o -iname '*.pdf' \) -print -quit | grep -q .; then
             echo "Restricted binary or media file found."
             exit 1
           fi
@@ -37,4 +41,3 @@ jobs:
             printf '%s\n' "$oversized"
             exit 1
           fi
-
