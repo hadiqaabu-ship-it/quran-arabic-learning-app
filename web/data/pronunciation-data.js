@@ -1,3 +1,7 @@
-// Production pronunciation content and audio mappings are intentionally excluded.
-window.QURAN_PRONUNCIATION_DATA = null;
-
+// This public release intentionally contains no audio or pronunciation mappings.
+window.QURAN_PRONUNCIATION_DATA = {
+  meta: { version: "0.2.0-demo", status: "no-audio", audioFileCount: 0 },
+  pronunciations: [],
+  recordMappings: {},
+  entryForms: {},
+};

@@ -4,73 +4,70 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/hadiqaabu-ship-it/quran-arabic-learning-app?include_prereleases)](https://github.com/hadiqaabu-ship-it/quran-arabic-learning-app/releases)
 
-一个面向中文学习者的离线优先阿拉伯语学习应用。项目包含 Web/PWA 学习界面和 Android WebView 容器，支持课程、词库、经文语境、发音练习、本地学习进度与备份。
+一个面向中文学习者的离线优先古兰经阿拉伯语学习应用。项目包含 Web/PWA 学习界面和 Android WebView 容器，把词汇、完整经文语境、主动回忆、间隔复习和本地学习进度放在同一条学习路径中。
 
-> 当前状态：早期社区源码版。代码可公开审查和构建；生产课程、教材与音频因版权和再分发边界暂不随仓库提供。
+> 当前公开版：`v0.2.0-community`。仓库自带可直接运行的七日演示内容，发布音频文件数为 **0**。
 
-## 为什么做这个项目
+## 现在可以直接体验什么
 
-中文使用者在学习古兰经阿拉伯语时，常常需要在词汇、完整经文语境、发音练习和复习计划之间切换。本项目希望提供一个可审计、离线优先且不依赖云端账号的学习框架：
+- 1 课完整展示全部 8 个学习词条，不设词库预览上限；
+- 《忠诚章》112:1–4 的 4 节完整阿拉伯语经文；
+- 7 天学习、巩固、经文定位和主动回忆安排；
+- 4 个字母的发音部位、字形位置和辨形练习；
+- 本地进度、收藏、复习和备份；
+- PWA 离线框架和 Android 离线容器源码。
 
-- 把词条放回完整经文语境，而不是只展示孤立片段；
-- 采用主动回忆和间隔复习，而不是只做浏览式学习；
-- 学习进度和录音默认只保存在本机；
-- 将程序代码与第三方教材、翻译和音频权利分开治理；
-- 同一套 Web 学习界面可用于 PWA 和离线 Android 容器。
+演示中的阿拉伯语经文是 Tanzil Quran Text v1.1 的逐字节选，中文为项目自编“学习释义”，不是经认证的宗教译本。完整来源和许可见 [docs/DEMO_CONTENT_LICENSES.md](docs/DEMO_CONTENT_LICENSES.md)。
 
-项目影响、维护工作和当前证据边界见 [docs/PROJECT_IMPACT.md](docs/PROJECT_IMPACT.md)。
+## 为什么暂不发布音频
 
-## 开源范围
+古兰经阿拉伯语原文、现代数字版本、译文、诵读表演和录音制品不是同一类权利。网页能播放或服务能生成音频，也不自动意味着可以把音频下载后放进 GitHub 或 APK 再分发。
 
-本仓库公开的是应用程序代码，不包含以下需要单独确认授权或重新制作的内容：
-
-- 语音合成、朗读和古兰经诵读音频；
-- 第三方教材、课程 PDF 及其扫描件；
-- 未明确允许再分发的翻译、词表和课程数据；
-- APK、签名文件、测试录音、设备日志和内部审核资料。
-
-这是有意设置的版权边界，不是文件遗漏。完整说明见 [docs/CONTENT_BOUNDARIES.md](docs/CONTENT_BOUNDARIES.md)。
-
-## 目录
-
-```text
-web/      Web/PWA 界面源码
-android/  Android 离线容器源码
-docs/     架构、项目影响和内容边界
-.github/  自动检查、Issue 和协作模板
-```
+因此本版本不包含任何诵读、单词、字母、语音合成或测试录音。无音频模式会自动隐藏发音导航、播放控件、听写入口和音频设置，其他学习功能可正常使用。边界与未来音频发布门槛见 [docs/CONTENT_BOUNDARIES.md](docs/CONTENT_BOUNDARIES.md)。
 
 ## 本地预览
 
-`web/data/` 中的三个占位文件只负责提示“内容包未安装”。要运行完整学习功能，请按 [web/data/README.md](web/data/README.md) 提供自有或已获授权的数据。
+在 `web/` 目录启动任意静态文件服务器并访问 `index.html`。例如：
 
-在 `web/` 目录启动任意静态文件服务器后访问 `index.html`。不要直接双击 HTML 文件测试 PWA 缓存功能。
+```bash
+cd web
+python -m http.server 8000
+```
+
+然后打开 `http://127.0.0.1:8000/`。不要直接双击 HTML 文件测试 PWA 缓存。
+
+## 自动验证
+
+```bash
+node --check web/app.js
+node scripts/validate-community-content.mjs
+```
+
+验证脚本会核对课程计数、ID 引用、四节经文文本、中文学习释义标识、空音频映射和仓库零音频文件边界。GitHub Actions 会在每次推送和 Pull Request 中重复执行。
 
 ## Android 构建
 
-1. 安装 Android Studio、Android SDK 35 和 JDK 17。
-2. 将已经完成授权审查的 Web 内容包放入 `android/app/src/main/assets/app/`。
-3. 在 `android/` 目录运行 Gradle 构建，或使用 Android Studio 打开该目录。
-4. 正式发布前使用自己的 release keystore 签名；不要发布 debug 签名 APK。
+1. 安装 Android Studio、Android SDK 35 和 JDK 17；
+2. 使用 Android Studio 打开 `android/`，或在该目录运行 Gradle 构建；
+3. 正式发布前使用自己的 release keystore 签名；
+4. 达到 [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) 的移动发布门槛后再发布 APK。
 
-当前 Android 工程没有提交个人 `local.properties`、密钥或构建产物。
+仓库不提交个人 `local.properties`、密钥或构建产物，本次 GitHub Release 也不附 APK。
 
-## 维护与路线
+## 项目证据与治理
 
+- 项目价值与证据边界：[docs/PROJECT_IMPACT.md](docs/PROJECT_IMPACT.md)
+- 20 个内部迭代版本：[docs/DEVELOPMENT_HISTORY.md](docs/DEVELOPMENT_HISTORY.md)
 - 架构说明：[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- 项目路线：[ROADMAP.md](ROADMAP.md)
+- 内容边界：[docs/CONTENT_BOUNDARIES.md](docs/CONTENT_BOUNDARIES.md)
+- 第三方通知：[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+- 路线图：[ROADMAP.md](ROADMAP.md)
 - 版本记录：[CHANGELOG.md](CHANGELOG.md)
-- 维护者职责：[MAINTAINERS.md](MAINTAINERS.md)
-- 支持方式：[SUPPORT.md](SUPPORT.md)
+- 维护职责：[MAINTAINERS.md](MAINTAINERS.md)
+- 安全政策：[SECURITY.md](SECURITY.md)
 
-## 许可证
+## 许可证与贡献
 
-程序代码采用 [GNU GPL-3.0-only](LICENSE)。
+程序代码和项目原创演示内容按 [GNU GPL-3.0-only](LICENSE) 提供；Tanzil 经文节选继续受其 CC BY 3.0 条款约束。GPL 不会自动授予第三方音频、教材、翻译、字体或数据的权利。
 
-GPL 只覆盖本仓库中明确公开的程序代码，不自动授予任何第三方音频、教材、翻译、字体或数据内容的权利。贡献内容前请阅读 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-
-## 参与贡献
-
-欢迎提交问题与改进。提交前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [SECURITY.md](SECURITY.md)。
-
-项目欢迎代码、可访问性、离线体验、测试和文档贡献。涉及经文、翻译、教材或音频的数据贡献，必须先提供清晰的来源与再分发许可。
+欢迎提交代码、可访问性、离线体验、测试和文档改进。提交前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。任何第三方内容贡献都必须先提供清晰的来源、版本和再分发许可。

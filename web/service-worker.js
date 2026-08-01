@@ -1,14 +1,14 @@
-const CACHE = "quran-arabic-learning-community-v1";
+const CACHE = "quran-arabic-learning-community-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=1.7.1-r2",
-  "./app.js?v=1.7.1-r2",
+  "./styles.css?v=0.2.0-community",
+  "./app.js?v=0.2.0-community",
   "./manifest.webmanifest",
   "./assets/app-icon.svg",
-  "./data/course-data.js?v=1.7.1",
-  "./data/alphabet-data.js?v=1.7.1",
-  "./data/pronunciation-data.js?v=1.7.1",
+  "./data/course-data.js?v=0.2.0-community",
+  "./data/alphabet-data.js?v=0.2.0-community",
+  "./data/pronunciation-data.js?v=0.2.0-community",
 ];
 
 self.addEventListener("install", (event) => {
